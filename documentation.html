@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Game of Life</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+    </head>
+    
+    <body>        
+        <h1>Game of Life</h1>
+        
+        <h2>Overview</h2>
+        
+        <h4>Principle Classes</h4>
+        
+        <div style="margin-left: 2em;">
+            <p>On launching the 'Game of Life' main method, a new instance of the <a href=#classes-golframe><code>GOLFrame</code></a> class is instantiated (henceforth the <code>frame</code>). This is the top level container for the GUI. On initialisation, this object creates a new instance of <a href=#classes-gamemodel><code>GameModel</code></a> (set as the final <code>model</code> property/constant) which in turn creates an instance of <a href=#classes-gamegrid><code>GameGrid</code></a> set as the final <code>grid</code> property of the <code>frame</code>. The GOLFrame then initialises the user control components and either adds them to the frame or the menu bar accordingly (see <a href=#classes-golframe><code>GOLFrame</code></a> for details). 
+            </p> 
+            <p>The <a href=#classes-gamegrid><code>GameGrid</code></a> class represents the coordinate space of cells. For this, the class holds an <a href=#classes-grid><code>Grid&lt;T&gt;</code></a> of <a href=#classes-cell><code>Cell</code></a> components (extending <code>JComponent</code>) which graphically represent a single cell which can be alive or dead. Methods for diplaying information about the state of the grid are delegated to the <code>GameGrid</code> class  (the <code>grid</code> property of the GOLFrame/GameModel). Property changes and user-controlled events are passed to any registered <a gref=#classes-gamegridlistener><code>GameGridListener</code></a> interfaces (in this case, the <code>model</code>).
+            </p>
+            <p>The <a href=#classes-gamemodel><code>GameModel</code></a> class is responsible for controlling and managing the game state (see <a href=#classes-gamestate><code>GameState</code></a> or summary below). This includes calculating the state after each iteration, as well as controlling resets, new games, and the iteration rate. Property changes on this object trigger calls to any registered <a href=#classes-gamemodeldelegate><code>GameModelDelegate</code></a> interface (in this case, the <code>frame</code>).
+            </p>
+            <p>Almost all user-controlled events are implemented by the <code>frame</code>, which, depending on the event, will call/defer the relevant methods to either the <code>model</code> or <code>grid</code>. Some user events will also defer to modal dialogs. The only user events that are not principally controlled by the  <code>frame</code> are mouse clicks/drags on the <code>grid</code>. These events are managed by the <code>grid</code> itself and triggers <code>GameGridListener</code> updates.
+            </p>
+            <p>Using custom interfaces (<code>GameModelDelegate, GameGridListener</code>) updates on the <code>grid</code> are deferred to the <code>model</code> and updates of the <code>model</code> are deferred to the <code>frame</code>
+            </p>
+        </div> 
+        
+        <h4>Low-Level Classes</h4>
+        <div style="margin-left: 2em;">
+            <p>Information about a particular game state is embedded in an instance of the <a href=#classes-gamestate><code>GameState</code></a> class. This class extends <a href=#classes-grid><code>Grid&lt;Boolean&gt;</code></a> and hence encapsulates a two-dimensional array of Boolean values, representing the live-state of each cell at every x-y coordinate. A GameState must be initialised with a <it>size</it> (int (for square grids) / int, int / Dimension). It also implements methods for reading and writing <code>GameStates</code>'s from and to strings. Note <code>GameStates</code>'s are immutable (i.e. cannot be resized).
+            </p>
+            <p>The <code>GameState</code> class also implements a (non-static) method that will return the next iteration of it's own state, according to the rules of the game. This method requires the specification of a <code>GameGeometry</code>. <a href=#classes-gamegeometry><code>GameGeometry</code></a> is an abstract class that implements a single method intended to return all adjacent points to a given parameter point.
+            </p>
+        <p>The <code>model</code> contains a <code>geometry</code> property (implementing <code>GameModel.GameGeometry</code>) which is used on each iteration to calculate the next game state. This state is passed to the <code>model</code>, which in turn copies the information embedded in the <code>GameState</code> to diplay the next iteration.
+            </p>
+        </div>
+        
+        <h4>Other Classes</h4>        
+        <div style="margin-left: 2em;">
+            <p>This project also includes some custom classes, usually intended to implement an idiosyncratic GUI design or convenient control. These include <a href=#classes-custombutton><code>CustomButton</code></a> (extends <code>JButton</code>), <a href=#classes-resizeoptionpane><code>ResizeOptionPane</code></a> and <a href=#classes-colorschemepicker><code>ColorSchemePicker</code></a>, (extends <code>JPanel</code>). See the next section for more details.
+            </p>                        
+        </div>
+                
+        
+        
+        
+        <h2 id="classes">Classes</h2>
+        
+        <h4 id="classes-gameoflife", style="font-family:courier;">class GameOfLife</h4>
+        <div style="margin-left: 2em;">
+            <p>The main class. Implements a new runnable, adding to the event queue. Runnable creates a new instance of <a href = #classes-golframe>GOLFrame</a>
+            </p>        
+        </div>
+        
+        <h4 id="classes-golframe", style="font-family:courier;">class GOLFrame</h4>
+        <div style="margin-left: 2em;">
+            <ul>            
+                <li>Extends: <code>JFrame</code></li>
+                <li>Implements: <code><a href=#classes-gamemodeldelegate>GameModelDelegate</a>, ActionListener</code>               
+                </li>
+            </ul>
+            <p>
+                This class (besides its inherited functionality) initialises the <a href=#classes-gamemodel>GameModel</a> object (which in turn creates an instance of <a href = #classes-gamegrid>GameGrid</a>).   
+            </p>            
+
+            <h5>Menu Components</h5>        
+            <ul>           
+                <li>
+                    'Open' and 'Save' state <code>JMenuItem</code>: propts a modal dialogue allowing the user to save the current game state (as a .txt file) or open a pre-saved state. Calls the <code>model</code>'s <code>pause(), start(), reset() or newGame()</code> methods as appropriate.
+                </li>
+                <li>
+                    'Set Grid Size' <code>JMenuItem</code>: promps a modal dialogue with a new <a href=#classes-resizeoptionpane>ResizeOptionPane</a> content pane. 
+                </li>
+                <li>
+                    'Set Color Scheme' <code>JMenuItem</code>: promps a modal dialogue with a new <a href=#classes-colorschemepicker>ColorSchemePicker</a> content pane
+                </li>
+                <li>
+                    Geometry option submenu: a <code>JMenu</code> with two <code>JRadioButtonMenuItems</code>. selecting one of these will call the <code>model</code>'s <code>setGeometry(int)</code> method. This sets the <a href=#classes-gamegeometry><code>Geometry</code></a> of the <a><code>GameModel</code></a> to either 'flat' of 'torus'.
+                </li>
+                <li>
+                    Templates menu: a <code>JMenu</code> that allows users to load pre-defined state templates. (There is only a small selection). Each template <code>JMenuItem</code> in the menu sends action events to an ActionListener that opens the relevant template (saved as a .txt file) in the projects resources directory, and calls the <code>model.setState(GameState)</code> method.
+                </li>
+            </ul>    
+
+
+            <h5>Frame Components</h5>
+            <ul>
+                <li>
+                    'Start/Pause' and 'Reset/Clear': <a href=#classes-custombutton><code>CustomButton</code></a>. The <code>frame</code> is added to these component's action listeners. Action events are queried for their source, and the appropriate method calls are deferred to the <code>model</code>'s <code>pause(), start(), reset()</code> and <code>newGame()</code> methods.
+                </li>
+                <li>
+                    Iteration label: <code>JLabel</code>. Writes the iteration number
+                </li>
+                <li>
+                    Speed slider: a <code>JSlider</code> component for controlling the iteration rate of the game. A <code>ChangeListener</code> implementation is added to the slider's listeners which sets the <code>model</code>'s <code>speed</code> value;
+                </li>   
+            </ul>
+            
+            <h5><code>GameModelDelegate</code> Methods</h5>
+            <p>
+                The frame implements methods defined by the <a href=#classes-gamemodeldelegate><code>GameModelDelegate</code></a> interface. These methods are designed to respond to game updates. These include: pausing, starting, resetting, iterating and renewing. The frame updates the text on its button components accordingly on these updates.
+            </p>
+            
+        </div>
+        
+        <h4 id="classes-gamemodel", style="font-family:courier;">class GameModel</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    implements: <code>GameGridListener, ActionListener</code>
+                </li>            
+            </ul>
+            <h5>Properties</h5>
+            <ul>
+                <li>
+                    <code>final GameGrid grid</code>: the grid asspciated with the model. Created on initialisation.
+                </li>
+                <li>
+                    <code>GameState initalState</code>: state of 0<sup>th</sup> iteration. This state is set as the current state on resets                    
+                </li>
+                <li>
+                    <code>GameState currentState</code>: the current state of the game
+                </li>
+                <li>
+                    <code>GameGeometry geometry</code>: the model's geometry, determines the adjacent points which in turn determines the next game state.
+                </li>
+                <li>
+                    <code>Timer timer</code>: Timer object that controls the iteration rate. Created on initialisation. Adds self to timer's actionListeners and updates the currentState calling the <a href=#classes-gamestate><code>GameState</code></a>'s nextIteration method depending on the model's current <code>geometry</code>.
+                </li>
+            </ul>
+            
+            <h5>GameGridListener Methods</h5>
+            Since this class implements <a href=#classes-gamegridlistener><code>GameGridListener</code></a>, it implements methods called by the <code>GameGrid</code>. 
+        </div>
+            
+        <h4 id="classes-gamemodeldelegate", style="font-family:courier;">interface GameModelDelegate</h4>
+        <div style="margin-left: 2em;">
+            <h5>Methods</h5>
+            <ul>
+                <code>
+                    <li>gameDidIterate()</li>
+                    <li>gameDidPause()</li>
+                    <li>gameDidRenew()</li>
+                    <li>gameDidReset()</li>
+                    <li>gameDidStart()</li>
+                    <li>gridDidResize()</li>
+                </code>                
+            </ul>
+        </div>
+        
+        <h4 id="classes-gamegeometry", style="font-family:courier;">abstract class GameModel.GameGeometry</h4>
+        <div style="margin-left: 2em;">
+            <p>
+                Inner class of the GameModel class. Requires a single method implementation: <code>Point[] getAdjacentPoints(Point p)</code>. This method returns a <code>Point</code> array (size 8) with nullable Point values (if the specific point does not exist) in a strict order. This order is:                
+            </p>
+            <ol>
+                <li>top-left</li>
+                <li>top-middle</li>
+                <li>top-right</li>
+                <li>middle-left</li>
+                <li>middle-right</li>
+                <li>bottom-left</li>
+                <li>bottom-middle</li>
+                <li>bottom-right</li>
+            </ol>
+        </div>
+        
+        <h4 id="classes-gamegrid", style="font-family:courier;">class GameGrid</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends: <code>JComponent</code>
+                </li>
+                <li>
+                    Implements: <code>Iterable&lt;Cell&gt;, MouseListener</code>
+                </li>
+            </ul>
+            Class responsible for displaying the <code>GameState</code>, encapsulating a <code>Grid&lt;Cell&gt;</code>
+            <h5>Properties</h5>
+            <ul>
+                <li>
+                    <code>Grid&lt;Cell&gt; cells</code>: Grid collection of cells. These are added to the grid using a <code>GridLayout</code> layout manager on initialisation and resizing. On creation, each cell's <code>MouseListener</code> is set to <code>this</code>. On mouse events, the source's <code>live</code> value is toggled and the grid calls the <code>cellClicked()</code> method on it's <code>GameGridListeners</code>. The Cell's <code>deadColor</code> is also set depending on the impending colour scheme.
+                </li>
+                <li>
+                    <code>Dimension size</code>: size of the grid. On resizing, the grid discards the current <code>cells GameGrid</code> and creates a new <code>GameGrid</code>, populating the grid with new Cells. (see the <code><a href=#classes-grid>Grid</a> populateGrid()</code> method).
+                </li>
+                <li>
+                    <code>GameState state</code>: the represented game state. Setting the grid's game state will cause it to synchronously iterate the grid's cells and new state, setting the cell's live state depending on the new state, followed by a <code>repaint()</code> call.                      
+                </li>
+                <li>
+                    <code>ColorScheme colorScheme</code>: the grid's colour scheme. The scheme determines the cell's live and dead colours.
+                </li>
+            </ul>
+            
+        </div>
+        
+        <h4 id="classes-gamegridlistener", style="font-family:courier;">interface GameGridListener</h4>
+        <div style="margin-left: 2em;">
+            Interface defines two methods:
+            <ul>
+                <li>cellCicked(Cell)</li>
+                <li>gridDidResize()</li>
+            </ul>
+        </div>
+        
+        <h4 id="classes-gamestate", style="font-family:courier;">class GameState</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>Extends <code>Grid&lt;Boolean&gt;</code></li>                                             
+            </ul>
+            <p>                
+                Class representing a 2-dimensional array of boolean values representing the live-values of a x-y coordinate space of cells. Inherits from <code>Grid</code>, hence is immutable. 
+            </p>
+            <h5>Methods</h5>
+            <ul>
+                <li>
+                    <code>static GameState readStateFromString/s(String/String[])</code>: returns a game state encoded in a string or string array.
+                </li>
+                <li>
+                    <code>String toString()</code>: returns a String encoding on the game state, using the conventions of '*' for a live cell and '-' for a dead cell. Lines indicate rows and columns indicate columns. 
+                </li>
+                <li>
+                    <code>GameState getNextGenerationState(GameModel.GameGeometry g)</code>: returns the next generation state based on the rules of the game (Underpopulation, Crowding, Creation) and the parameter <code><a href=#classes-gamegeometry>GameGeometry</a></code>.
+                </li>
+            </ul>
+            
+        </div>
+        
+        <h4 id="classes-grid", style="font-family:courier;">class Grid&lt;T&gt;</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Implements <code>Iterable&lt;T&gt;, Cloneable</code>
+                </li>                
+            </ul>
+            <p>
+                Class encapsulates a 2-dimensional array and defines two Iterator methods. The default <code>iterator()</code> method iterates the <code>T</code> values for each mamber of the grid in left-to-right then top-to-bottom order. The <code>iteratePoints()</code> method returns an iterator that iterates all the <code>Points</code> int the grid in the same order as before. Basic setting ang getting operations are also defined
+            </p>
+            <p>
+                This class also contains a method <code>populateGrid(ObjectFactory&lt;T&gt;)</code> which can be called to fill the grid with object using an implmentation of the custom <code>ObjectFacotry</code> interface (see below)
+            </p>
+        </div>
+        
+        <h4 id="classes-objectfactory", style="font-family:courier;">interface ObjectFactory&lt;T&gt;</h4>
+        <div style="margin-left: 2em;">
+            This interface defines a single method <code>T newObject()</code>, which should be implemented to return a new instance of a generic object type. This interface is designed to be used in conjunction with the <code>Grid</code> class to fill each point of a grid with a new Object.
+        </div>
+        
+        <h4 id="classes-cell", style="font-family:courier;">class Cell</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JComponent</code>
+                </li>
+            </ul>
+            A graphical representation of a cell.
+            <h5>Properties</h5>
+            <ul>
+                <li>
+                    <code>Color deadColor</code> the color to paint the cell if it is dead (may be null)
+                </li>
+                <li>
+                    <code>Color liveColor</code> the color to paint to the cell if it alive (may be null, but ideally should be set)
+                </li>
+            </ul>
+            The live and dead colours of the cell are to be controlled using the <a href=#classes-colorscheme><code>ColorScheme</code></a> object
+        </div>
+        
+        <h4 id="classes-colorscheme", style="font-family:courier;">class ColrScheme</h4>
+        <div style="margin-left: 2em;">
+            <p>
+            An immutable object that hold a series of colours. One 'dead' colour and any number of 'live' colours. This class is designed to be exploited by the <code>GameGrid</code> object to be queried as it sets the <code>liveColor</code> and <code>deadColor</code> fields of its <code>Cell</code>'s.
+            </p>
+            <p>
+                This class also defines a method <code>Color randomCellColor()</code>. If the <code>cellColors</code> array length is greater than 1, it returns any one of those values according to the result of a random integer generation, allowing a <code>GameGrid</code> to randomly allocate colors to living cells.
+            </p>
+            <h5>Properties</h5>
+            <ul>
+                <li>
+                    <code>Color deadCellColor</code>: the (nullable) colour with which to paint a dead cell
+                </li>
+                <li>
+                    <code>Color[] cellColors</code>: the colour with which to paint a live cell
+                </li>
+            </ul>
+            
+        </div>
+        
+        <h4 id="classes-resizeoptionpane", style="font-family:courier;">class ResizeOptionPane</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JPanel</code>                    
+                </li>
+                <li>
+                    Implements <code>ChangeListener</code>
+                </li>
+            </ul>
+            <p>
+                This class instantiates a <code>JPanel</code> allowing users to intuitively specify the size of a grid. On initialisation, the panel created the components listed below and adds them to the layout using a <code>GroupLayout</code> manager.
+            </p>
+            <h5>Properties</h5>
+            <ul>
+                <li>
+                    <code>Dimension size</code>: the impending size of the grid
+                </li> 
+                <li>
+                    <code>int modalResult</code>: used to query the outcome of the modal window in which this component is intended to be placed.
+                </li>
+                <li>
+                    <code>ActionListener listener</code>: an ActionListener to be called when the user selects the 'Done' or 'Cancel' buttons. (Listners should close the modal window when an action is received)
+                </li>
+            </ul>
+            <h5>Components</h5>
+            <ul>
+                <li>
+                    <code>JSlider widthSlider / heightSlider</code>: Sliders to be used to adjust the width and height of a grid. The panel adds itself to the sliders' change listeners to register changes and update the impending size.
+                </li>
+                <li>
+                    <code>CustomButton doneButton / cancelButton</code>: user-controls for closing the modal dialog. Custom action listeners are implemented and added to these components and actions are deferred to the panel's action listener.
+                </li>
+                <li>
+                    <code>JSpinner heightSpinner / widthSpinner</code>: an alternate user-control for setting the grid size. Again, the panel adds itself to the spiiners' change listeners.
+                </li>
+                <li>
+                    <code><a href=#classes-miniaturegrid>MiniatureGrid</a> grid</code>: a component that diplays a miniature grid representation of the impending grid size.
+                </li>
+            </ul>
+        </div>
+        
+        <h4 id="classes-miniaturegrid", style="font-family:courier;">class ResizeOptionPane.MiniatureGrid</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JComponent</code>
+                </li>
+            </ul>
+            <p>
+                A component that draws a scaled down, simplified grid to be used as a simple visual guide to a specified grid size.
+            </p>
+        </div>        
+        
+        
+        <h4 id="classes-colorschemepicker", style="font-family:courier;">class ColorSchemePicker</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JPanel</code>                    
+                </li>
+                <li>
+                    Implements <code>MouseListener, ActionListener</code>
+                </li>
+            </ul>
+            <p>
+                This class is intended to provide a panel with which a user can select from a series of colour schemes.
+            </p>
+            <h5>Components</h5>
+            <ul>
+                <li>
+                    <code>CustomButton doneButton / cancelButton</code>: similary to the <code><a href=#classes-resizeoptionpane>ResizeOptionPane</a></code>, these buttons allow the user to approve or cancel a color scheme selection. The panel passes itself as the action listener of the buttons, and responds to sent actions by informing the <code>ColorSchemePickerDelegate</code> listener that one of the buttons has been pressed (the <code>ColorSchemePickerDelegate</code> should respond by closing the modal window as well as taking other apporpriate actions).
+                </li>
+            </ul>
+            <h5>Interface Implementations</h5>
+            <ul>
+                <li>
+                    This class implements <code>MouseListener</code>, and responds to <code>mouseClicked()</code> events on the displayed <code>ColorSchemeItem</code> components. On receiving click events, the impeding <code>scheme</code> fied is updated and the <code>ColorSchemeItem</code> components' <code>selected</code> values are updated.
+                </li>
+                <li>
+                    This class also receives <code>actionPerformed()</code> events from the button components. On receiving these events, the <code>ColorSchemePickerDelegate</code>'s <code>selectionDidEnd(boolean)</code> method is called.
+                </li>
+            </ul>
+        </div>
+        
+        <h4 id="classes-colorschemeitem", style="font-family:courier;">class ColorSchemeItem</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JComponent</code>
+                </li>
+            </ul>
+            <p>
+                This component is designed to display a particular <code>ColorScheme</code>, depending on the value of it's <code>ColorScheme</code> field.
+            </p>
+        </div>
+        
+        <h4 id="classes-colorschemepickerdelegate", style="font-family:courier;">interface ColorSchemePickerDelegate</h4>
+        <div style="margin-left: 2em;">
+            <p>
+                This interface defines two methods:                
+            </p>
+            <ul>
+                <li>
+                    <code>colorSchemeDidSelect(ColorScheme)</code>: called when a user selects a particular color scheme on a <code>ColorSchemePicker</code>
+                </li>
+                <li>
+                    <code>selectionDidEnd(boolean apply)</code>: this method is called when a user clicks either the <code>ColorSchemePicker</code>'s <code>doneButton</code> or <code>cancelButton</code>. The passed boolean value is set to true if 'Done' was clicked and flase otherwise, informing the delegate whether or not to apply the colour scheme change.
+                </li>
+            </ul>
+        </div>                
+        
+        <h4 id="classes-custombutton", style="font-family:courier;">class CustomButton</h4>
+        <div style="margin-left: 2em;">
+            <ul>
+                <li>
+                    Extends <code>JComponent</code>
+                </li>
+            </ul>
+            <p>
+                This class is just a custom tweak of a <code>JButton</code>. It overrides the <code>paintComponent()</code> method in order to seize control of the button design.
+            </p>
+            <p>
+                The button includes two extra fields: <code>Color armedBackgroundColor / armedForegroundColor</code>. If the button is armed, the button fills its backgound with <code>armedBackgroundColor</code> and the text is painted using <code>armedForegroundColor</code>. On initialisation, these colours are set to a default.
+            </p>
+        </div>        
+        
+    </body>
+</html>
