@@ -8,16 +8,35 @@
     </head>
     
     <body>        
-        <h1>Game of Life</h1>
+        <h1>Game of Life</h1>            
         
         <h2>Overview</h2>
+        
+        <h4>Preamble</h4>
+        <p>
+            Ideally the Game of Life should occupy a potentially infinite (or at least arbitrarily unbounded) coordinate space. Implementing this in a program would be an unpalatable mixture of messy and inefficient. One could (lets say) define a coordinate space that grew or contracted based on the enclosing square of state's living cells. If a single space ship were created, it would shoot off for all eternity, expanding the grid after each iteration. Such an implementation would become very processor intensive rather fast. It would also have the added disadvantage of forcing us to do one of the following
+        </p>
+        <ol>
+            <li>
+                Have the grid resolution reconfigure after the grid expansion/contraction so we might fit the grid on screen, potentially leaving us with a grid with too high a resolution
+            </li>
+            <li>
+                Alternatively, place the grid in a scroll view, but doing so would not give the user a decent overview of the state
+            </li>
+        </ol>
+        <p>
+            I have decided to specify a maximum and minimum grid size and disallow grid resizing during a game in order to alleviate any ugliness / inefficiency of having uncontrollably large spaces. I also allow for a re-configuration of grid resolutions for larger grid sizes. Although this does come at the cost of forcing us to abandon the ideal of an unbounded space, I have also implemented a compromise. Users of this program may specify a <i>grid geometry</i>, which may be one of two options: <i>Flat</i> or <i>Torus</i>. Specifying a torus geometry will <i>wrap</i> the cells on the left hand side of the grid to the right hand side, and visa-versa, and similarly for top-to-bottom. This way, we can let spaceships continue to propagate unimpeded. It also allows us to do things that we couldn't otherwise do in an unbounded space, creating tessellating Agars.
+        </p>
+        <p>
+            I have included below a summary of the program, including a brief overview and a more detailed manual of the classes implemented.
+        </p>
         
         <h4>Principle Classes</h4>
         
         <div style="margin-left: 2em;">
-            <p>On launching the 'Game of Life' main method, a new instance of the <a href=#classes-golframe><code>GOLFrame</code></a> class is instantiated (henceforth the <code>frame</code>). This is the top level container for the GUI. On initialisation, this object creates a new instance of <a href=#classes-gamemodel><code>GameModel</code></a> (set as the final <code>model</code> property/constant) which in turn creates an instance of <a href=#classes-gamegrid><code>GameGrid</code></a> set as the final <code>grid</code> property of the <code>frame</code>. The GOLFrame then initialises the user control components and either adds them to the frame or the menu bar accordingly (see <a href=#classes-golframe><code>GOLFrame</code></a> for details). 
+            <p>On launching the 'Game of Life' main method, a new instance of the <a href=#classes-golframe><code>GOLFrame</code></a> class is instantiated (henceforth the <code>frame</code>). This is the top-level container for the GUI. On initialisation, this object creates a new instance of <a href=#classes-gamemodel><code>GameModel</code></a> (set as the final <code>model</code> property/constant) which in turn creates an instance of <a href=#classes-gamegrid><code>GameGrid</code></a> set as the final <code>grid</code> property of the <code>frame</code>. The GOLFrame then initialises the user control components and either adds them to the frame or the menu bar accordingly (see <a href=#classes-golframe><code>GOLFrame</code></a> for details). 
             </p> 
-            <p>The <a href=#classes-gamegrid><code>GameGrid</code></a> class represents the coordinate space of cells. For this, the class holds an <a href=#classes-grid><code>Grid&lt;T&gt;</code></a> of <a href=#classes-cell><code>Cell</code></a> components (extending <code>JComponent</code>) which graphically represent a single cell which can be alive or dead. Methods for diplaying information about the state of the grid are delegated to the <code>GameGrid</code> class  (the <code>grid</code> property of the GOLFrame/GameModel). Property changes and user-controlled events are passed to any registered <a gref=#classes-gamegridlistener><code>GameGridListener</code></a> interfaces (in this case, the <code>model</code>).
+            <p>The <a href=#classes-gamegrid><code>GameGrid</code></a> class represents the coordinate space of cells. For this, the class holds an <a href=#classes-grid><code>Grid&lt;T&gt;</code></a> of <a href=#classes-cell><code>Cell</code></a> components (extending <code>JComponent</code>) which graphically represent a single cell which can be alive or dead. Methods for deplaning information about the state of the grid are delegated to the <code>GameGrid</code> class  (the <code>grid</code> property of the GOLFrame/GameModel). Property changes and user-controlled events are passed to any registered <a gref=#classes-gamegridlistener><code>GameGridListener</code></a> interfaces (in this case, the <code>model</code>).
             </p>
             <p>The <a href=#classes-gamemodel><code>GameModel</code></a> class is responsible for controlling and managing the game state (see <a href=#classes-gamestate><code>GameState</code></a> or summary below). This includes calculating the state after each iteration, as well as controlling resets, new games, and the iteration rate. Property changes on this object trigger calls to any registered <a href=#classes-gamemodeldelegate><code>GameModelDelegate</code></a> interface (in this case, the <code>frame</code>).
             </p>
@@ -33,7 +52,7 @@
             </p>
             <p>The <code>GameState</code> class also implements a (non-static) method that will return the next iteration of it's own state, according to the rules of the game. This method requires the specification of a <code>GameGeometry</code>. <a href=#classes-gamegeometry><code>GameGeometry</code></a> is an abstract class that implements a single method intended to return all adjacent points to a given parameter point.
             </p>
-        <p>The <code>model</code> contains a <code>geometry</code> property (implementing <code>GameModel.GameGeometry</code>) which is used on each iteration to calculate the next game state. This state is passed to the <code>model</code>, which in turn copies the information embedded in the <code>GameState</code> to diplay the next iteration.
+        <p>The <code>model</code> contains a <code>geometry</code> property (implementing <code>GameModel.GameGeometry</code>) which is used on each iteration to calculate the next game state. This state is passed to the <code>model</code>, which in turn copies the information embedded in the <code>GameState</code> to display the next iteration.
             </p>
         </div>
         
@@ -68,13 +87,13 @@
             <h5>Menu Components</h5>        
             <ul>           
                 <li>
-                    'Open' and 'Save' state <code>JMenuItem</code>: propts a modal dialogue allowing the user to save the current game state (as a .txt file) or open a pre-saved state. Calls the <code>model</code>'s <code>pause(), start(), reset() or newGame()</code> methods as appropriate.
+                    'Open' and 'Save' state <code>JMenuItem</code>: prompts a modal dialogue allowing the user to save the current game state (as a .txt file) or open a pre-saved state. Calls the <code>model</code>'s <code>pause(), start(), reset() or newGame()</code> methods as appropriate.
                 </li>
                 <li>
-                    'Set Grid Size' <code>JMenuItem</code>: promps a modal dialogue with a new <a href=#classes-resizeoptionpane>ResizeOptionPane</a> content pane. 
+                    'Set Grid Size' <code>JMenuItem</code>: prompts a modal dialogue with a new <a href=#classes-resizeoptionpane>ResizeOptionPane</a> content pane. 
                 </li>
                 <li>
-                    'Set Color Scheme' <code>JMenuItem</code>: promps a modal dialogue with a new <a href=#classes-colorschemepicker>ColorSchemePicker</a> content pane
+                    'Set Color Scheme' <code>JMenuItem</code>: prompts a modal dialogue with a new <a href=#classes-colorschemepicker>ColorSchemePicker</a> content pane
                 </li>
                 <li>
                     Geometry option submenu: a <code>JMenu</code> with two <code>JRadioButtonMenuItems</code>. selecting one of these will call the <code>model</code>'s <code>setGeometry(int)</code> method. This sets the <a href=#classes-gamegeometry><code>Geometry</code></a> of the <a><code>GameModel</code></a> to either 'flat' of 'torus'.
@@ -115,10 +134,10 @@
             <h5>Properties</h5>
             <ul>
                 <li>
-                    <code>final GameGrid grid</code>: the grid asspciated with the model. Created on initialisation.
+                    <code>final GameGrid grid</code>: the grid associated with the model. Created on initialisation.
                 </li>
                 <li>
-                    <code>GameState initalState</code>: state of 0<sup>th</sup> iteration. This state is set as the current state on resets                    
+                    <code>GameState initalState</code>: state of 0<sup>the</sup> iteration. This state is set as the current state on resets                    
                 </li>
                 <li>
                     <code>GameState currentState</code>: the current state of the game
@@ -236,10 +255,10 @@
                 </li>                
             </ul>
             <p>
-                Class encapsulates a 2-dimensional array and defines two Iterator methods. The default <code>iterator()</code> method iterates the <code>T</code> values for each mamber of the grid in left-to-right then top-to-bottom order. The <code>iteratePoints()</code> method returns an iterator that iterates all the <code>Points</code> int the grid in the same order as before. Basic setting ang getting operations are also defined
+                Class encapsulates a 2-dimensional array and defines two Iterator methods. The default <code>iterator()</code> method iterates the <code>T</code> values for each member of the grid in left-to-right then top-to-bottom order. The <code>iteratePoints()</code> method returns an iterator that iterates all the <code>Points</code> in the grid in the same order as before. Basic setting and getting operations are also defined
             </p>
             <p>
-                This class also contains a method <code>populateGrid(ObjectFactory&lt;T&gt;)</code> which can be called to fill the grid with object using an implmentation of the custom <code>ObjectFacotry</code> interface (see below)
+                This class also contains a method <code>populateGrid(ObjectFactory&lt;T&gt;)</code> which can be called to fill the grid with object using an implementation of the custom <code>ObjectFacotry</code> interface (see below)
             </p>
         </div>
         
@@ -310,7 +329,7 @@
                     <code>int modalResult</code>: used to query the outcome of the modal window in which this component is intended to be placed.
                 </li>
                 <li>
-                    <code>ActionListener listener</code>: an ActionListener to be called when the user selects the 'Done' or 'Cancel' buttons. (Listners should close the modal window when an action is received)
+                    <code>ActionListener listener</code>: an ActionListener to be called when the user selects the 'Done' or 'Cancel' buttons. (Listeners should close the modal window when an action is received)
                 </li>
             </ul>
             <h5>Components</h5>
@@ -322,10 +341,10 @@
                     <code>CustomButton doneButton / cancelButton</code>: user-controls for closing the modal dialog. Custom action listeners are implemented and added to these components and actions are deferred to the panel's action listener.
                 </li>
                 <li>
-                    <code>JSpinner heightSpinner / widthSpinner</code>: an alternate user-control for setting the grid size. Again, the panel adds itself to the spiiners' change listeners.
+                    <code>JSpinner heightSpinner / widthSpinner</code>: an alternate user-control for setting the grid size. Again, the panel adds itself to the spinners' change listeners.
                 </li>
                 <li>
-                    <code><a href=#classes-miniaturegrid>MiniatureGrid</a> grid</code>: a component that diplays a miniature grid representation of the impending grid size.
+                    <code><a href=#classes-miniaturegrid>MiniatureGrid</a> grid</code>: a component that displays a miniature grid representation of the impending grid size.
                 </li>
             </ul>
         </div>
@@ -359,13 +378,13 @@
             <h5>Components</h5>
             <ul>
                 <li>
-                    <code>CustomButton doneButton / cancelButton</code>: similary to the <code><a href=#classes-resizeoptionpane>ResizeOptionPane</a></code>, these buttons allow the user to approve or cancel a color scheme selection. The panel passes itself as the action listener of the buttons, and responds to sent actions by informing the <code>ColorSchemePickerDelegate</code> listener that one of the buttons has been pressed (the <code>ColorSchemePickerDelegate</code> should respond by closing the modal window as well as taking other apporpriate actions).
+                    <code>CustomButton doneButton / cancelButton</code>: similarly to the <code><a href=#classes-resizeoptionpane>ResizeOptionPane</a></code>, these buttons allow the user to approve or cancel a color scheme selection. The panel passes itself as the action listener of the buttons, and responds to sent actions by informing the <code>ColorSchemePickerDelegate</code> listener that one of the buttons has been pressed (the <code>ColorSchemePickerDelegate</code> should respond by closing the modal window as well as taking other appropriate actions).
                 </li>
             </ul>
             <h5>Interface Implementations</h5>
             <ul>
                 <li>
-                    This class implements <code>MouseListener</code>, and responds to <code>mouseClicked()</code> events on the displayed <code>ColorSchemeItem</code> components. On receiving click events, the impeding <code>scheme</code> fied is updated and the <code>ColorSchemeItem</code> components' <code>selected</code> values are updated.
+                    This class implements <code>MouseListener</code>, and responds to <code>mouseClicked()</code> events on the displayed <code>ColorSchemeItem</code> components. On receiving click events, the impeding <code>scheme</code> fired is updated and the <code>ColorSchemeItem</code> components' <code>selected</code> values are updated.
                 </li>
                 <li>
                     This class also receives <code>actionPerformed()</code> events from the button components. On receiving these events, the <code>ColorSchemePickerDelegate</code>'s <code>selectionDidEnd(boolean)</code> method is called.
@@ -395,7 +414,7 @@
                     <code>colorSchemeDidSelect(ColorScheme)</code>: called when a user selects a particular color scheme on a <code>ColorSchemePicker</code>
                 </li>
                 <li>
-                    <code>selectionDidEnd(boolean apply)</code>: this method is called when a user clicks either the <code>ColorSchemePicker</code>'s <code>doneButton</code> or <code>cancelButton</code>. The passed boolean value is set to true if 'Done' was clicked and flase otherwise, informing the delegate whether or not to apply the colour scheme change.
+                    <code>selectionDidEnd(boolean apply)</code>: this method is called when a user clicks either the <code>ColorSchemePicker</code>'s <code>doneButton</code> or <code>cancelButton</code>. The passed boolean value is set to true if 'Done' was clicked and false otherwise, informing the delegate whether or not to apply the colour scheme change.
                 </li>
             </ul>
         </div>                
@@ -411,9 +430,11 @@
                 This class is just a custom tweak of a <code>JButton</code>. It overrides the <code>paintComponent()</code> method in order to seize control of the button design.
             </p>
             <p>
-                The button includes two extra fields: <code>Color armedBackgroundColor / armedForegroundColor</code>. If the button is armed, the button fills its backgound with <code>armedBackgroundColor</code> and the text is painted using <code>armedForegroundColor</code>. On initialisation, these colours are set to a default.
+                The button includes two extra fields: <code>Color armedBackgroundColor / armedForegroundColor</code>. If the button is armed, the button fills its background with <code>armedBackgroundColor</code> and the text is painted using <code>armedForegroundColor</code>. On initialisation, these colours are set to a default.
             </p>
         </div>        
         
     </body>
 </html>
+
+
